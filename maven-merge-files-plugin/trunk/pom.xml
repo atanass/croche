@@ -7,7 +7,7 @@
 	<name>maven-merge-file-plugin</name>
 	<description>This is a maven mojo for merging multiple files into a
 		single target file</description>
-	<url>http://croche.googlecode.com/svn/docs/maven-merge-files-plugin/${project.version}/index.html</url>
+    <url>https://github.com/jamiely/croche/docs/maven-merge-files-plugin/${project.version}/index.html</url>
 	<inceptionYear>2011</inceptionYear>
 
 	<organization>
@@ -20,7 +20,7 @@
 			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
 		</license>
 	</licenses>
-
+ 
 	<developers>
 		<developer>
 			<id>croche</id>
@@ -41,9 +41,9 @@
 		<url>http://code.google.com/p/croche/issues/list</url>
 	</issueManagement>
 	<scm>
-		<connection>scm:svn:http://croche.googlecode.com/svn/maven-merge-files-plugin/trunk</connection>
-		<developerConnection>scm:svn:https://croche.googlecode.com/svn/maven-merge-files-plugin/trunk</developerConnection>
-		<url>http://code.google.com/p/croche/source/browse/#svn/maven-merge-files-plugin/trunk</url>
+		<connection>scm:git:https://github.com/jamiely/croche/maven-merge-files-plugin/tags/maven-merge-file-plugin-0.4</connection>
+		<developerConnection>scm:git:https://github.com/jamiely/croche/maven-merge-files-plugin/tags/maven-merge-file-plugin-0.4</developerConnection>
+		<url>http://code.google.com/p/croche/source/browse/#svn/maven-merge-files-plugin/tags/maven-merge-file-plugin-0.4</url>
 	</scm>
 
 	<prerequisites>
@@ -51,19 +51,19 @@
 	</prerequisites>
 
 
-	<distributionManagement>
+ 	<distributionManagement>
 		<repository>
 			<id>croche-googlecode</id>
-			<url>svn:https://croche.googlecode.com/svn/repository/releases</url>
+			<url>git:https://github.com/jamiely/croche/repository/releases</url>
 		</repository>
 		<snapshotRepository>
 			<id>croche-googlecode</id>
 			<uniqueVersion>false</uniqueVersion>
-			<url>svn:https://croche.googlecode.com/svn/repository/snapshots</url>
+			<url>git:https://github.com/jamiely/croche/repository/snapshots</url>
 		</snapshotRepository>
 		<site>
 			<id>croche-googlecode</id>
-			<url>svn:https://croche.googlecode.com/svn/docs/maven-merge-files-plugin/${project.version}/</url>
+			<url>git:https://github.com/jamiely/croche/docs/maven-merge-files-plugin/${project.version}/</url>
 		</site>
 	</distributionManagement>
 
@@ -160,7 +160,23 @@
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 				</configuration>
 			</plugin>
-
+                        <plugin>
+                                <artifactId>maven-assembly-plugin</artifactId>
+                                <executions>
+                                        <execution>
+                                                <phase>package</phase>
+                                                <goals>
+                                                        <goal>single</goal>
+                                                </goals>
+                                    <configuration>
+                                                        <descriptorRefs>
+                                                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                                                        </descriptorRefs>
+                                                        <appendAssemblyId>false</appendAssemblyId>
+                                                </configuration>
+                                        </execution>
+                                </executions>
+                        </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>

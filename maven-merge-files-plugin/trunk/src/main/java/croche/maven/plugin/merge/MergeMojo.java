@@ -15,6 +15,7 @@ package croche.maven.plugin.merge;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,24 +93,107 @@ public class MergeMojo extends AbstractMojo {
 		for (Merge merge : this.merges) {
 
 			// remove target file if present...
-			if (merge.getTargetFile().exists()) {
+			if (merge.getTargetFile() != null && merge.getTargetFile().exists()) {
 				merge.getTargetFile().delete();
 			}
 
-			// build ordering names
-			buildOrderings(merge);
+			if (!merge.getMatchingMerge()) {
+				// build ordering names
+				buildOrderings(merge);
 
-			// scan directories to build the ordered set of files to be written
-			scanDirectories(merge);
-
-			// merge the files into the target directory
-			int numMergedFiles = mergeFiles(merge);
-
-			getLog().info("Finished Appending: " + numMergedFiles + " files to the target file: " + merge.getTargetFile().getAbsolutePath() + ".");
+				// scan directories to build the ordered set of files to be written
+				scanDirectories(merge);
+				
+				// merge the files into the target directory
+				int numMergedFiles = mergeFiles(merge);
+				getLog().info("Finished Appending: " + numMergedFiles + " files to the target file: " + merge.getTargetFile().getAbsolutePath() + ".");
+			} else {
+				mergeMatchingFiles(merge);
+			}
 
 		}
 	}
 
+	private void mergeMatchingFiles(Merge merge) throws MojoExecutionException {
+
+		List<String> matchingFiles = new ArrayList<String>();
+		
+		// get all matching files into one array list
+		for (File sourceDir : merge.getSourceDirs()) {
+			try {
+				matchingFiles.addAll(FileUtils.getFileNames(sourceDir, merge.getFileMatch(), merge.getExcludesCSV(), false));
+			} catch (IOException ioe) {
+				throw new MojoExecutionException("Failed to find matching files of the source dir: " + sourceDir.getAbsolutePath(), ioe);
+			}
+		}
+		
+		// read the encoding to use
+		String encoding = DEFAULT_ENCODING;
+		if (merge.getEncoding() != null && merge.getEncoding().length() > 0) {
+			encoding = merge.getEncoding();
+		}
+		
+		// leave only unique file names that will be merged
+		Set<String> uniqueFileSet = new HashSet<String>();
+		uniqueFileSet.addAll(matchingFiles);
+		matchingFiles.clear();
+		matchingFiles.addAll(uniqueFileSet);
+
+		Writer ostream = null;
+		FileOutputStream fos = null;
+		InputStream input = null;
+		File matchedFile = null;
+		
+		for (String file : matchingFiles) {
+			int numMergedMatchedFiles = 0;
+			for (File dir : merge.getSourceDirs()) {
+				matchedFile = new File(dir.getAbsolutePath() + "/" + file); 
+				if (matchedFile.exists() == false){
+					continue;
+				}
+				getLog().info("Appending file " + file + " to " + merge.getTargetDir() + "/" + file);
+				try {
+					fos = new FileOutputStream(merge.getTargetDir() + "/" + file, true);
+					ostream = new OutputStreamWriter(fos, encoding);
+					BufferedWriter output = new BufferedWriter(ostream);
+					input = new FileInputStream(matchedFile);
+					if (merge.getSeparator() != null && merge.getSeparator().trim().length() > 0) {
+						String replaced = merge.getSeparator().trim();
+						// remove any line breaks and tabs due to xml formatting
+						replaced = replaced.replace("\n", "");
+						replaced = replaced.replace("\t", "");
+						// replace the file name and parent name variables
+						replaced = replaced.replace("#{file.name}", file);
+						replaced = replaced.replace("#{parent.name}", dir.getName());
+						// add in any requested line breaks and tabs
+						replaced = replaced.replace("\\n", "\n");
+						replaced = replaced.replace("\\t", "\t");
+						getLog().debug("Appending separator: " + replaced);
+						IOUtils.copy(new StringReader(replaced), output);
+					}
+					// add file contents
+					IOUtils.copy(input, output, encoding);
+					output.flush();
+					numMergedMatchedFiles ++;
+				} catch (IOException ioe) {
+					throw new MojoExecutionException("Failed to append file: " + matchedFile.getAbsolutePath() + " to output file", ioe);
+				} finally {
+					if (input != null) {
+						IOUtils.closeQuietly(input);
+					}
+					if (fos != null) {
+						IOUtils.closeQuietly(fos);
+					}
+					if (ostream != null) {
+						IOUtils.closeQuietly(ostream);
+					}
+				}
+			}
+			getLog().info("Merged " + numMergedMatchedFiles + " files with the name " + file + " from the source dirs.");
+		}
+		
+	}
+	
 	private int mergeFiles(Merge merge) throws MojoExecutionException {
 
 		// read the encoding to use

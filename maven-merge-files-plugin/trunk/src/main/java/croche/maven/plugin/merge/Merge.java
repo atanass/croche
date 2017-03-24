@@ -35,7 +35,40 @@ public class Merge {
 	private String separator;
 	private String encoding;
 	private boolean duplicatesAllowed = false;
+	private boolean matchingMerge = false;
+	private File targetDir;
+	private String fileMatch;
 
+	/**
+	 * A flag that indicates whether to merge files with the same names into a file in the @targetDir
+	 * @parameter
+	 * @required
+	 * @return matchingMerge
+	 */
+	public boolean getMatchingMerge() {
+		return this.matchingMerge;
+	}
+	
+	/**
+	 * The target directory in case of matching merge
+	 * @parameter
+	 * @required
+	 * @return targetDir
+	 */
+	public File getTargetDir() {
+		return this.targetDir;
+	}
+	
+	/**
+	 * The file name to match in case of matching merge
+	 * @parameter
+	 * @required
+	 * @return targetDir
+	 */
+	public String getFileMatch() {
+		return this.fileMatch;
+	}
+	
 	/**
 	 * The target file that the files in this merge will be merged into
 	 * @parameter
